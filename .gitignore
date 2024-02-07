@@ -1,0 +1,4 @@
+*.png
+.env
+sns_test/
+__pycache__/
