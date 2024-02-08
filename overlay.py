@@ -1,7 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
+from time import sleep
 
 class Overlay:
     def overlay_numbers(self, image_path):
+        sleep(1)
         # Open the image file
         with Image.open(image_path) as img:
             draw = ImageDraw.Draw(img)
