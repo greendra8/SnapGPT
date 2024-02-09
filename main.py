@@ -176,7 +176,7 @@ def long_running_process():
 
     def send_sms(message):
         account_sid = os.getenv("TWILIO_ACCOUNT_SID")
-        auth_token = os.getenv("Twilio_Auth_Token")
+        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
         client = Client(account_sid, auth_token)
 
         message = client.messages.create(
