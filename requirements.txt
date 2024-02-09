@@ -1,0 +1,8 @@
+Flask==3.0.2
+openai==0.27.2
+Pillow==9.2.0
+Pillow==10.2.0
+python-dotenv==1.0.1
+selenium==4.17.2
+twilio==7.17.0
+undetected_chromedriver==3.5.4
