@@ -1,0 +1,89 @@
+/* Hide notification request */
+div.wHvEy {
+    display: none;
+  }
+  
+  /* Hide menu bar */
+  div.XlW_1 {
+    display: none;
+  }
+  
+  /* Hide cam and bitmoji on home */
+  div.L3KxA.tN6x1 {
+    display: none;
+  }
+  div.G3Z4U.Xg7U0 {
+    display: none;
+  }
+  
+  /* List width */
+  div.BL7do, .O4POs {
+    width: 500px;
+  }
+  
+  /* Hide crap in list */
+  div[role=listitem] {
+    /* margin-top: -174px; */
+    margin-top: -100px;
+  }
+  
+  /* Search Bar */
+  div.yC1EG {
+    display: none;
+  }
+  
+  /* Main Chat Window */
+  div.Vbjsg.WJjwl {
+    margin-left: 160px;
+  }
+  
+  /* Blue New Chat Text */
+  .tGtEY {
+    font-size: 20px;
+    text-transform: uppercase;
+  }
+  
+  /* increase font size of chat */
+  div.IBqK8 {
+    font-size: 25px
+  }
+  
+  /* replacement text for red snaps */
+  .xndUg:before {
+    content: "Received";
+    font-weight: 300;
+    font-size: 13px;
+    color: #dededeb0;
+  }
+  
+  /* hide red snaps */
+  .xndUg {
+    color: rgba(255, 0, 0, 0);
+    font-size: 0;
+    
+  }
+  /* hide red snap square */
+  div svg rect {
+    display: none;
+  }
+  
+  /* hide stories */
+  div.swiper-wrapper {
+    display: none;
+  }
+  
+  /* Notifications are off banner */
+  
+  div.KgtSb {
+    display: none;
+  }
+  
+  /* current chat notification */
+  .Titq2:before {
+    content: "Current chat:";
+    margin: 50px;
+  }
+  .Titq2 {
+    background: green;
+  }
+  
