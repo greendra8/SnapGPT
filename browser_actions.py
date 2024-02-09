@@ -6,6 +6,7 @@ import time
 class BrowserActions:
     def __init__(self):
         options = webdriver.ChromeOptions()
+        # change the path to your own user data directory
         options.add_argument("--user-data-dir=C:\\Users\\green\\AppData\\Local\\Google\\Chrome\\User Data")
         options.add_argument("--headless=new")
         options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
