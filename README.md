@@ -2,12 +2,11 @@
 
 This project utilizes GPT-4V to generate function calls for reading and writing Snapchat messages via Selenium and the Snapchat web interface.
 ## Setup
-1. Install the required dependencies by running pip install -r requirements.txt.
-2. Set up the necessary environment variables by creating a .env file and adding your OpenAI API and Twilio credentials.
-3. Use service like ngrok to expose the server to the internet. (ngrok http 5000)
-4. Set up a Twilio phone number and configure it to send incoming SMS messages to the server.
-5. Change path in browser_actions.py to the path of your chrome profile that has the Snapchat account logged in.
-6. Install Stylebot extension and edit web.snapchat.com to include styles from stylebot.css
+1. Install the required dependencies by running `pip install -r requirements.txt`.
+2. Set up a Twilio phone number and configure it to send incoming SMS messages to the server. (set numbers 'message comes in' webhook to your ngrok url + /sms)
+3. Set up the necessary environment variables by creating a .env file and adding your OpenAI API, Twilio, and ngrok credentials.
+4. Change path in browser_actions.py to the path of your chrome profile that has the Snapchat account logged in.
+5. Install Stylebot extension and edit web.snapchat.com to include styles from stylebot.css
 ## Usage
 1. Start the Flask server by running python main.py. Expose the server to the internet using a service like ngrok.
 2. Send SMS messages to the server to trigger the GPT-4V assistant.
