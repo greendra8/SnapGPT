@@ -38,3 +38,7 @@ class BrowserActions:
         message = message.encode('utf-16', 'surrogatepass').decode('utf-16')
         input_box.send_keys(message)
         input_box.send_keys(Keys.RETURN)
+
+    def return_to_home(self):
+        time.sleep(0.5)
+        self.driver.get("https://web.snapchat.com")
