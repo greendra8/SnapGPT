@@ -11,6 +11,8 @@ import sys
 import base64
 import os
 from dotenv import load_dotenv
+from pyngrok import ngrok
+import subprocess
 
 app = Flask(__name__)
 messages_queue = queue.Queue()
@@ -23,7 +25,6 @@ def long_running_process():
     def encode_image(image_path):
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
-        print(f"Encoded image at {image_path}")
         return encoded_image
 
     with open("vision_prompt.txt", "r") as file:
@@ -39,7 +40,6 @@ def long_running_process():
         prompt_history = ""
         for item in history[-15:]:
             prompt_history += item + "\n"
-        print(prompt_history)
         response = openai.ChatCompletion.create(
             model="gpt-4-vision-preview",
             messages=[
@@ -70,14 +70,12 @@ def long_running_process():
             ],
             max_tokens=500,
         )
-        print("Image analysis completed.")
         history.append("Assistant: " + response.choices[0].message.content)
         return response.choices[0]
 
-    # Once image has been analysed, we'll take its output and pass it to normal GPT4 with function calls.
-    def gpt4(history, user_input, image_analysis_output):
-        print("Sending data to GPT-4 for further analysis...")
-        print(image_analysis_output)
+    # Once image has been analysed, we'll take its output and pass it to GPT with function calls.
+    def choose_function(history, user_input, image_analysis_output):
+        print("Starting function call..")
         # turn history list into a string
         prompt_history = ""
         for item in history[-15:]:
@@ -166,12 +164,12 @@ def long_running_process():
             tool_choice="auto",
             max_tokens=500,
         )
-        print("Received analysis from GPT-4.")
-        print(response.choices[0].message)
         try:
             reply_content = response.choices[0].message.tool_calls[0].function
+            print("Received function call: " + reply_content.name)
         except:
             reply_content = response.choices[0].message.content
+            print("Received text response: " + reply_content)
         return reply_content
 
     def send_sms(message):
@@ -188,50 +186,48 @@ def long_running_process():
     def main():
         browser_actions = BrowserActions()
         try:
-            print("Application started.")
+            print("Application start up!")
             overlay = Overlay()
             answered = True
             history = []
             already_sent = False
             already_opened = False
 
-            def decide_next_action(gpt4_output):
+            def decide_next_action(function_call):
                 nonlocal answered
                 nonlocal history
                 nonlocal already_sent
                 nonlocal already_opened
-                print(f"Deciding next action based on GPT-4 output: {gpt4_output}")
-                # check if name exists in gpt4_output
-                if isinstance(gpt4_output, str):
-                    print("GPT: " + gpt4_output)
-                    send_sms(gpt4_output)
+                # check if name exists in function_call
+                if isinstance(function_call, str):
+                    print("GPT: " + function_call)
+                    send_sms(function_call)
                     answered = True
-                    history.append(gpt4_output)
+                    history.append(function_call)
                     return
-                if gpt4_output.name == "open_snapchat_message" and not already_opened:
+                if function_call.name == "open_snapchat_message" and not already_opened:
                     already_opened = True
-                    history.append("Assistant called: " + gpt4_output.name)
-                    arguments_dict = json.loads(gpt4_output["arguments"])
+                    history.append("Assistant called: " + function_call.name)
+                    arguments_dict = json.loads(function_call["arguments"])
                     position = arguments_dict["position"]
                     browser_actions.open_chat(position)
                     answered = False
 
-                elif gpt4_output.name == "send_snapchat_message" and not already_sent:
+                elif function_call.name == "send_snapchat_message" and not already_sent:
                     already_sent = True
-                    history.append("Assistant called: " + gpt4_output.name)
-                    arguments_dict = json.loads(gpt4_output["arguments"])
+                    history.append("Assistant called: " + function_call.name)
+                    arguments_dict = json.loads(function_call["arguments"])
                     message = arguments_dict["message"]
                     browser_actions.reply_to_chat(message)
                     answered = False
 
-                elif gpt4_output.name == "reply_to_user" or gpt4_output.name == "send_snapchat_message" or gpt4_output.name == "open_snapchat_message":
-                    arguments_dict = json.loads(gpt4_output["arguments"])
+                elif function_call.name == "reply_to_user" or function_call.name == "send_snapchat_message" or function_call.name == "open_snapchat_message":
+                    arguments_dict = json.loads(function_call["arguments"])
                     try:
                         response = arguments_dict["response"]
                     except:
                         response = "Send successful!"
                     print(response)
-                    # call sendsms function
                     send_sms(response)
 
                     history.append("Assistant answered: " + response)
@@ -240,13 +236,19 @@ def long_running_process():
             while True:
                 checking_messages = True
                 if answered:
+                    print("Checking for messages...")
+                    check_count = 0
                     while checking_messages:
                         if not messages_queue.empty():
                             question = messages_queue.get()
-                            print(f"Processing message: {question}")
                             checking_messages = False
                         else:
-                            print("No messages to process, long-running process is waiting...")
+                            # every minute (12 sleeps) print "checking for messages"
+                            check_count += 1
+                            if check_count == 12:
+                                print("Still checking...")
+                                browser_actions.return_to_home()
+                                check_count = 0
                         time.sleep(5)  # Prevent this loop from consuming too much CPU
                     answered = False
                     already_sent = False
@@ -256,10 +258,8 @@ def long_running_process():
                         sys.exit(0)
                     history.append("User: " + question)  
                 else:
-                    print("Taking screenshot...")
                     browser_actions.take_screenshot("screen.png")
                     overlay.overlay_numbers("screen.png")
-                    print("Screenshot taken. Starting image analysis...")
                     n = 0
                     while n < 3:
                         try:
@@ -274,24 +274,27 @@ def long_running_process():
                     n = 0
                     while n < 3:
                         try:
-                            decide_next_action(gpt4(history, question, image_analysis_output))
+                            decide_next_action(choose_function(history, question, image_analysis_output))
                             break
                         except Exception as e:
                             n += 1
-                            print("GPT-4 failed. Retrying..." + str(e))
+                            print("Function call failed. Retrying..." + str(e))
                     if n == 3:
-                        print("GPT-4 failed 3 times. Exiting...")
-                        sys.exit(1)
+                        print("Function call failed 3 times. Exit loop and continue checking for messages...")
+                        continue
+                        
+                        
         except Exception as e:
             print(f"An error occurred: {e}")
             raise
         finally:
-            browser_actions.quit()
-            browser_actions.close_browser()
             print("Application stopped.")
     
     main()
     
+def kill_chrome():
+    subprocess.call(['taskkill', '/F', '/IM', 'chrome.exe'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 
 @app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():
@@ -312,6 +315,17 @@ if __name__ == "__main__":
     thread.daemon = True  # Daemonize thread
     thread.start()
 
+    # Start ngrok at free subdomain
+    load_dotenv()
+    ngrok.set_auth_token(os.getenv("NGROK_AUTH_TOKEN"))
+    ngrok_tunnel = ngrok.connect(hostname=os.getenv("NGROK_DOMAIN"), proto="http", addr="5000")
+    print(f'ngrok tunnel "{ngrok_tunnel.public_url}" -> "http://localhost:5000"')
+
     # Start the Flask application
-    app.run(debug=True, use_reloader=False)  # use_reloader=False to avoid creating duplicate threads when the server reloads
+    try:
+        app.run(debug=True, use_reloader=False)  # use_reloader=False to avoid creating duplicate threads when the server reloads
+    finally:
+        ngrok.kill()
+        kill_chrome()
+        print("Application stopped.")
 
